@@ -930,6 +930,9 @@ describe.each(databases.eachSupportedId())(
             : undefined,
           live: row.final_entity !== null,
           deleted: row.deleted_at !== null,
+          lastUid: row.last_final_entity
+            ? JSON.parse(row.last_final_entity).metadata.uid
+            : undefined,
           generation: Number(row.generation),
         };
       };
@@ -947,6 +950,7 @@ describe.each(databases.eachSupportedId())(
         uid: 'first',
         live: true,
         deleted: false,
+        lastUid: undefined,
         generation: expect.any(Number),
       });
 
@@ -958,11 +962,13 @@ describe.each(databases.eachSupportedId())(
       ]);
       await expect(stitch()).resolves.toBe('changed');
       const tombstone = await readFinal();
+      // The replaced body is kept for evaluating permissions on the deletion
       expect(tombstone).toEqual({
         slotId: 'first',
         uid: undefined,
         live: false,
         deleted: true,
+        lastUid: 'first',
         generation: expect.any(Number),
       });
       expect(tombstone.generation).toBeGreaterThan(published.generation);
@@ -984,6 +990,7 @@ describe.each(databases.eachSupportedId())(
         uid: 'second',
         live: true,
         deleted: false,
+        lastUid: undefined,
         generation: expect.any(Number),
       });
       expect(revived.generation).toBeGreaterThan(tombstone.generation);
